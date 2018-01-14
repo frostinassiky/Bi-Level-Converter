@@ -57,7 +57,12 @@ class Generator:
 
     def stat(self):
         path = self.vocPath + self.inputFolder
-        for file in os.listdir(path):
+        file_train = self.vocPath + "ImageSets/Main/trainval.txt"
+        print("Dropping boxes one by one ..")
+        with open(file_train) as f:
+            lines = f.readlines()  # get file names
+        # not this one -> for file in os.listdir(path):
+        for id in lines:
             # file_path = os.path.join(path, file)
             self.stat_cat_obj["_default"] += 1
             objects = self.read_xml(self.open_xml(file))
@@ -69,6 +74,7 @@ class Generator:
                 self.stat_cat_pic[cat] += self.stat_cat_boo[cat]
                 self.stat_cat_boo[cat] = 0
             self.stat_cat_pic["_default"] += 1
+
     def stat_show(self):
         g.stat()
         plt.bar(left=xrange(len(self.stat_cat_obj)),
@@ -93,6 +99,21 @@ class Generator:
                 # remove the object
         data.write( self.vocPath + self.outputFolder + "/" + id + ".xml" )
         return len(data.getroot().findall('object'))
+
+    def drop_freq(self):
+        # check if self.stat run before
+        if self.stat_cat_pic["_default"] == 0:
+            self.stat()
+        # get drop list for each cat
+        for cat in self.categories:
+            drop_num = int(self.stat_cat_obj[cat]*self.rate)
+            drop_list = random.sample(range(self.stat_cat_obj[cat]),drop_num) # index from 0
+            index = 0
+
+        # drop randomly
+        dropping = True
+        while dropping:
+
 
     def missing(self, id = "000005"):
         file = self.vocPath+"ImageSets/Main/trainval.txt"
