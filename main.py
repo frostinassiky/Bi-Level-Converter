@@ -1,12 +1,13 @@
 import os, shutil
 import xml.etree.ElementTree as ET
 import matplotlib.pyplot as plt
+import random
 
 class Generator:
     rate = 0.0
     inputFolder = "Annotations"
     outputFolder = "Annotations0"
-    vocPath = "/Users/xum/Documents/DeepLearning/VOCdevkit/VOC2012/"
+    vocPath = "/media/xum/New Volume/data/VOCdevkit/VOC2007/"
     categories = [
         "aeroplane", "bicycle", "bird", "boat", "bottle",
         "bus", "car", "cat", "chair", "cow",
@@ -22,10 +23,9 @@ class Generator:
         self.rate = rate
         self.outputFolder = self.inputFolder + str(int(rate * 10))
         output_path = self.vocPath + self.outputFolder
-        if os.path.exists(output_path):
-            shutil.rmtree(output_path)
-        os.mkdir(output_path)
-        print("Create folder " + output_path)
+        if not os.path.exists(output_path):
+            shutil.copytree(self.vocPath + self.inputFolder, output_path)
+            print("Created folder " + output_path)
         self.init_dict()
 
     def init_dict(self):
@@ -33,14 +33,6 @@ class Generator:
             self.stat_cat_obj[cat] = 0
             self.stat_cat_pic[cat] = 0
             self.stat_cat_boo[cat] = 0
-
-    def print_node(self, node):
-        print "=============================================="
-        print "node.attrib:%s" % node.attrib
-        if node.attrib.has_key("age") > 0:
-            print "node.attrib['age']:%s" % node.attrib['age']
-        print "node.tag:%s" % node.tag
-        print "node.text:%s" % node.text
 
     def open_xml(self, file_name="2007_000027.xml"):
         return ET.parse(self.vocPath+self.inputFolder+'/'+file_name)
@@ -90,16 +82,38 @@ class Generator:
         plt.setp(plt.axes().get_xticklabels(), rotation=70)
         plt.show()
 
-    def drop_prob(self, rate=0.5):
+    def drop_prob(self, id = "000005", rate=0.5):
         # inputFolder
-        pass
+        filename = id + ".xml"
+        data = self.open_xml(filename)
+        nodes = data.getroot().findall('object')
+        for node in nodes:
+            if random.random() < self.rate: # missing rate
+                data.getroot().remove(node)
+                # remove the object
+        data.write( self.vocPath + self.outputFolder + "/" + id + ".xml" )
+        return len(data.getroot().findall('object'))
+
+    def missing(self, id = "000005"):
+        file = self.vocPath+"ImageSets/Main/trainval.txt"
+        print("Dropping boxes one by one ..")
+        with open(file) as f:
+            lines = f.readlines() # get file names
+        new_content = []
+        for content in lines:
+            if self.drop_prob(content.rstrip("\n"), self.rate) >0:
+                new_content.append(content)
+        new_file = self.vocPath + "ImageSets/Main/trainval"+ str(int(self.rate * 10)) + ".txt"
+        with open(new_file, "w") as f:
+            f.writelines(new_content)
+
+        print("Created new missing annotations with mr="+str(self.rate))
 
 
 
-g = Generator(0.1)
-'''
-xml_data = g.open_xml()
-g.read_xml(xml_data)
-g.save_xml(xml_data)
-'''
-g.stat_show()
+
+
+
+g = Generator()
+
+g.missing()
