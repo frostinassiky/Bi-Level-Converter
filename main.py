@@ -7,7 +7,8 @@ class Generator:
     rate = 0.0
     inputFolder = "Annotations"
     outputFolder = "Annotations0"
-    vocPath = "/media/xum/New Volume/data/VOCdevkit/VOC2007/"
+    #vocPath = "/media/xum/New Volume/data/VOCdevkit/VOC2007/"
+    vocPath = "/home/xum/Documents/Datasets/VOCdevkit2007/VOC2007_original/"
     categories = [
         "aeroplane", "bicycle", "bird", "boat", "bottle",
         "bus", "car", "cat", "chair", "cow",
@@ -60,7 +61,7 @@ class Generator:
         return objects
 
     def stat(self, file="trainval.txt"):
-        if file=="trainval.txt":
+        if file == "trainval.txt":
             path = self.vocPath + self.inputFolder
         else:
             path = self.vocPath + self.outputFolder
@@ -85,7 +86,7 @@ class Generator:
             self.stat_cat_pic["_default"] += 1
         print("done")
         for keys, values in self.stat_cat_obj.items():
-            print(keys,values)
+            print(keys, values)
 
     def stat_show(self):
         g.stat()
@@ -147,18 +148,18 @@ class Generator:
         for cat in self.categories:
             print( " - Now dropping categoray "+ cat )
             drop_num = int(self.stat_cat_obj[cat]*self.rate)
-            drop_list = random.sample(range(self.stat_cat_obj[cat]),drop_num) # index from 0
+            drop_list = random.sample(range(self.stat_cat_obj[cat]), drop_num) # index from 0
             index = 0
             for content in lines:
                 filename = content.rstrip() + ".xml"
                 data = self.open_xml(filename, old = False)
                 nodes = data.getroot().findall('object')
                 for node in nodes:
-                    if node.find('name')==cat:
+                    if node.find('name').text==cat:
                         if index in drop_list:
                             # delete that object
                             data.getroot().remove(node)
-                    index += 1
+                        index += 1
                 data.write(self.vocPath + self.outputFolder + '/' + filename)
         self.update_list()
 
@@ -181,8 +182,13 @@ class Generator:
 
 
 
+import sys
 
-
-g = Generator(0.5)
+if len(sys.argv)>1:
+    mr = float(sys.argv[1])
+else: 
+    mr = 0.8
+print ('Missing Rate ', mr)
+g = Generator(mr)
 
 g.drop_freq()
